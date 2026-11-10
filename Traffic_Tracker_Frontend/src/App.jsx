@@ -1,122 +1,159 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import Dashboard from './pages/Dashboard';
+import LiveTraffic from './pages/LiveTraffic';
+import TrafficHistory from './pages/TrafficHistory';
+import Settings from './pages/Settings';
+import { 
+  INITIAL_TRAFFIC_DATA, 
+  INITIAL_NOTIFICATIONS, 
+  calculateTrafficStats, 
+  generateSimulatedTrafficUpdate 
+} from './data/trafficData';
 
-function App() {
-  const [count, setCount] = useState(0)
+/**
+ * App Root Component
+ * Central state coordinator for navigation, corridor telemetry,
+ * selection state, and simulation updates.
+ */
+export default function App() {
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [trafficData, setTrafficData] = useState(INITIAL_TRAFFIC_DATA);
+  const [selectedRoad, setSelectedRoad] = useState(INITIAL_TRAFFIC_DATA[0]); // Default to first corridor for immediate context
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState('16:47:35');
+
+  // Compute aggregate statistics dynamically from state
+  const trafficStats = calculateTrafficStats(trafficData);
+
+  // Refresh simulated dataset with subtle randomized variation
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+
+    setTimeout(() => {
+      const updatedData = generateSimulatedTrafficUpdate(trafficData);
+      setTrafficData(updatedData);
+
+      // Keep selected road telemetry synchronized if one is active
+      if (selectedRoad) {
+        const refreshedSelected = updatedData.find((r) => r.id === selectedRoad.id);
+        if (refreshedSelected) {
+          setSelectedRoad(refreshedSelected);
+        }
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      });
+      setLastUpdated(timeStr);
+      setIsRefreshing(false);
+    }, 400);
+  };
+
+  // Road selection handler
+  const handleSelectRoad = (road) => {
+    // If passed a road object or ID
+    if (typeof road === 'string') {
+      const matched = trafficData.find((r) => r.id === road);
+      if (matched) setSelectedRoad(matched);
+    } else {
+      setSelectedRoad(road);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedRoad(null);
+  };
+
+  const handleMarkAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
+
+  // Determine current page titles
+  const getPageHeaderInfo = () => {
+    switch (currentPage) {
+      case 'dashboard':
+        return {
+          title: 'Traffic Overview & Telemetry',
+          subtitle: 'Lucknow Metropolitan Corridor Operations & Congestion Diagnostics'
+        };
+      case 'live':
+        return {
+          title: 'Live Traffic Monitor',
+          subtitle: 'Real-Time Simulated GIS Corridors & Speed Sensor Feeds (Lucknow Urban)'
+        };
+      case 'history':
+        return {
+          title: 'Traffic History & Analytics',
+          subtitle: 'Historical Trend Analysis & Database Storage (Planned for V2)'
+        };
+      case 'settings':
+        return {
+          title: 'Operations Settings',
+          subtitle: 'System Configuration, Alerts & Display Parameters'
+        };
+      default:
+        return {
+          title: 'Traffic Tracker',
+          subtitle: 'Operations Console'
+        };
+    }
+  };
+
+  const headerInfo = getPageHeaderInfo();
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-layout">
+      {/* 1. Collapsible / Persistent Navigation Sidebar */}
+      <Sidebar
+        currentPage={currentPage}
+        onNavigate={(page) => setCurrentPage(page)}
+      />
 
-      <div className="ticks"></div>
+      {/* 2. Main Application Body */}
+      <main className="app-main">
+        {/* Global Application Header */}
+        <Header
+          pageTitle={headerInfo.title}
+          pageSubtitle={headerInfo.subtitle}
+          roads={trafficData}
+          onSelectRoad={handleSelectRoad}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+          lastUpdated={lastUpdated}
+          notifications={notifications}
+          onMarkAllRead={handleMarkAllRead}
+        />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {/* View Router */}
+        {currentPage === 'dashboard' && (
+          <Dashboard
+            roads={trafficData}
+            stats={trafficStats}
+            selectedRoad={selectedRoad}
+            onSelectRoad={handleSelectRoad}
+            onClearSelection={handleClearSelection}
+          />
+        )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {currentPage === 'live' && (
+          <LiveTraffic
+            roads={trafficData}
+            selectedRoad={selectedRoad}
+            onSelectRoad={handleSelectRoad}
+            onClearSelection={handleClearSelection}
+          />
+        )}
+
+        {currentPage === 'history' && <TrafficHistory />}
+
+        {currentPage === 'settings' && <Settings />}
+      </main>
+    </div>
+  );
 }
-
-export default App
