@@ -47,8 +47,8 @@ export default function Sidebar({ currentPage, onNavigate }) {
           <Activity size={22} strokeWidth={2.4} />
         </div>
         <div className="sidebar-brand-text">
-          <span className="sidebar-brand-title">TrafficTracker</span>
-          <span className="sidebar-brand-version">OPERATIONS V1.0</span>
+          <span className="sidebar-brand-title">TRAFF TRACKS</span>
+          <span className="sidebar-brand-version">version 1.0</span>
         </div>
       </div>
 

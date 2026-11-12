@@ -79,13 +79,13 @@ export default function App() {
     switch (currentPage) {
       case 'dashboard':
         return {
-          title: 'Traffic Overview & Telemetry',
-          subtitle: 'Lucknow Metropolitan Corridor Operations & Congestion Diagnostics'
+          title: 'TRAFF TRACKS',
+          subtitle: 'Monitor Traffics Across Corridors'
         };
       case 'live':
         return {
           title: 'Live Traffic Monitor',
-          subtitle: 'Real-Time Simulated GIS Corridors & Speed Sensor Feeds (Lucknow Urban)'
+          subtitle: 'Real-Time Simulated GIS Corridors'
         };
       case 'history':
         return {
